@@ -1,0 +1,22 @@
+app: 
+  name: "Sentinel-X"
+  log_level: "INFO"
+  log_dir: "logs"
+
+monitoring: 
+  process:
+    poll_interval_seconds: 5
+    ignore_list: 
+    - "svchost.exe"
+    - "explorer.exe"
+
+  file_integrity:
+    watched_paths:
+      - "/etc"
+      - "/home"
+    watch_events:
+      - "created"
+      - "deleted"
+      - "modified"
+  usb:
+    auto_scan_on_insert: false
