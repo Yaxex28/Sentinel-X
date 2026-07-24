@@ -23,3 +23,26 @@ def insert_event(conn: sqlite3.Connection, event: Event) -> None:
         )
     )
     conn.commit()
+
+def query_events(conn, severity : str = None, source : str = None):
+
+    cursor = conn.cursor()
+
+    conditions = []
+    values = []
+
+    if severity is not None:
+        conditions.append("severity = ?")
+        values.append(severity)
+
+    if source is not None:
+        conditions.append("source = ?")
+        values.append(source)
+
+    sql = "SELECT * FROM events"
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+
+    cursor.execute(sql, values)
+    rows = cursor.fetchall()
+    return rows
