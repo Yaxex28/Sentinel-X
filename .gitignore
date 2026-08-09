@@ -22,3 +22,6 @@ Thumbs.db
 
 # Database
 data/
+
+# Test artifacts
+watch_test/
