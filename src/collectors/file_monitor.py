@@ -4,6 +4,8 @@ from watchdog.events import FileSystemEventHandler
 from core.models import Event
 from storage.repository import insert_event
 from storage.database import init_db
+from watchdog.observers import Observer
+
 
 last_seen = {}
 def should_record(path, debounce_seconds = 2):
@@ -100,3 +102,23 @@ def content_really_changed(path:str) -> bool:
     if previous_hash is None:
         return True
     return current_hash != previous_hash
+
+def run_file_monitor(db_path: str, host: str, watched_paths: list, max_seconds:int = None):
+    """start watching the given paths for file changes."""
+    handler = FileEventHandler(db_path, host)
+    observer = Observer()
+
+    for path in watched_paths:
+        observer.schedule(handler, path, recursive=False)
+
+    observer.start()
+
+    try:
+        if max_seconds is not None:
+            time.sleep(max_seconds)
+        else:
+            while True:
+                time.sleep(1)
+    finally:
+        observer.stop()
+        observer.join()
