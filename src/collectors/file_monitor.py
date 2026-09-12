@@ -122,3 +122,4 @@ def run_file_monitor(db_path: str, host: str, watched_paths: list, max_seconds:i
     finally:
         observer.stop()
         observer.join()
+        
