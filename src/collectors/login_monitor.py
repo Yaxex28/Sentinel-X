@@ -1,5 +1,7 @@
 import win32evtlog
 from core.models import Event
+import time
+from storage.repository import insert_event  # match this to whatever usb_monitor.py imports
 
 failed_login_times = []  # tracks recent failure timestamps
 
@@ -88,3 +90,23 @@ def build_login_events(login_events: list, host: str) -> list:
                 events.append(alert)
 
     return events
+
+
+def run_login_monitor(conn, host: str, poll_interval_seconds: int = 5, max_iterations: int = None):
+    """Continuously poll the Security log, build Events, and store them."""
+    count = 0
+
+    while True:
+        raw_events = process_login_events(host)
+
+        if raw_events:
+            events = build_login_events(raw_events, host)
+            for event in events:
+                insert_event(conn, event)
+                print(f"[+] {event.description}")
+
+        time.sleep(poll_interval_seconds)
+
+        count += 1
+        if max_iterations is not None and count >= max_iterations:
+            break
