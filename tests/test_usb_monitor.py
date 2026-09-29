@@ -13,3 +13,5 @@ def test_detect_usb_changes_finds_removed():
     inserted, removed = detect_usb_changes(old_drives, new_drives)
     assert inserted == set()
     assert removed == {"E"}
+
+    
