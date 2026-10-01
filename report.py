@@ -1,10 +1,10 @@
 import sys
-import json
 from collections import Counter
 sys.path.insert(0, "src")
 
 from storage.database import init_db
 from storage.repository import query_events
+from engine.timeline_engine import cluster_events, summarize_cluster, is_interesting
 
 
 def generate_report(db_path: str):
@@ -35,9 +35,20 @@ def generate_report(db_path: str):
     for row in sorted(high_severity, key=lambda r: r[1]):
         print(f"  [{row[1]}] {row[3]:16s} {row[6]}")
 
-    print("\n-- Full Chronological Timeline (last 20) --")
-    for row in sorted(events, key=lambda r: r[1])[-20:]:
-        print(f"  [{row[1]}] ({row[5]:6s}) {row[6]}")
+    sorted_events = sorted(events, key=lambda r: r[1])
+    clusters = cluster_events(sorted_events, gap_seconds=10)
+
+    print(f"\n-- Activity Clusters ({len(clusters)} total) --")
+    interesting_count = 0
+    for cluster in clusters:
+        summary = summarize_cluster(cluster)
+        flagged = is_interesting(summary)
+        if flagged:
+            interesting_count += 1
+        flag_label = "  [FLAGGED]" if flagged else ""
+        print(f"  {summary['start']} to {summary['end']} | {summary['event_count']} events | sources: {summary['sources_involved']}{flag_label}")
+
+    print(f"\n{interesting_count} of {len(clusters)} clusters flagged as noteworthy.")
 
     print("\n" + "=" * 60)
 
