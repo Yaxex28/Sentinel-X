@@ -5,7 +5,7 @@ sys.path.insert(0, "src")
 from storage.database import init_db
 from storage.repository import query_events
 from engine.timeline_engine import cluster_events, summarize_cluster, is_interesting
-
+from engine.threat_scoring import score_event
 
 def generate_report(db_path: str):
     conn = init_db(db_path)
@@ -45,8 +45,13 @@ def generate_report(db_path: str):
         flagged = is_interesting(summary)
         if flagged:
             interesting_count += 1
-        flag_label = "  [FLAGGED]" if flagged else ""
-        print(f"  {summary['start']} to {summary['end']} | {summary['event_count']} events | sources: {summary['sources_involved']}{flag_label}")
+        flag_label = " [FLAGGED]" if flagged else ""
+        print(f'{summary["start"]} to {summary["end"]} | {summary["event_count"]} events | sources: {summary['sources_involved']}{flag_label}')
+
+        for event in cluster:
+            event_type = event[4]
+            score = score_event(event_type, cluster_is_interesting=flagged)
+            print(f"    score={score:5.1f}   {event[6]}")
 
     print(f"\n{interesting_count} of {len(clusters)} clusters flagged as noteworthy.")
 
