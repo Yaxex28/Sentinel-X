@@ -74,11 +74,12 @@ def generate_report(db_path: str):
         for event in cluster:
             score = score_event(event[4], cluster_is_interesting=flagged)
             scored_events.append((score, event[1], event[6]))
-            tag = get_attack_tag(event[4])
-            tag_label = ""
-            if tag:
-                tag_label = "  [" + tag["technique_id"] + " " + tag["technique"] + "]"
-            print(f"    score={score:5.1f}   {event[6]}{tag_label}")
+            if flagged or show_all:
+                tag = get_attack_tag(event[4])
+                tag_label = ""
+                if tag:
+                    tag_label = "  [" + tag["technique_id"] + " " + tag["technique"] + "]"
+                print(f"    score={score:5.1f}   {event[6]}{tag_label}")
 
     print(f"\n{interesting_count} of {len(clusters)} clusters flagged as noteworthy.")
 
@@ -90,4 +91,5 @@ def generate_report(db_path: str):
 
 
 if __name__ == "__main__":
+    show_all = "--full" in sys.argv
     generate_report("data/sentinel.db")
