@@ -88,9 +88,11 @@ To generate demo activity: open a few programs, create/edit/delete a file in `wa
 
 26 automated tests cover config validation, storage and filtered queries (in-memory SQLite), file hashing and debouncing, USB diffing, brute-force detection (including a boundary test at the window edge), clustering and flagging, scoring, and ATT&CK mapping.
 
-## Results (representative live run)
+## Results (live runs on the development machine)
 
-57 events collected (40 process, 9 login, 6 file, 2 USB) were grouped into 6 clusters; exactly 1 was flagged: a 15-event cluster combining login, process and USB activity, where the USB events scored 7.5 after the correlation multiplier.
+**Run A: process, file, USB and login activity, no brute-force attempt.** 57 events (40 process, 9 login, 6 file, 2 USB) formed 6 clusters. One was flagged: a 15-event cluster combining login, process and USB activity, where the USB events scored 7.5 after the correlation multiplier.
+
+**Run B: deliberate activity** (file create/edit/delete, USB insertion, six wrong-password attempts). 61 events (42 process, 10 login, 7 file, 2 USB; 53 low, 7 medium, 1 high) formed 4 clusters, all flagged because each contained a deliberate action. The highest-scored event was the brute-force alert (13.5 = baseline 9 x 1.5), followed by the USB insertions (7.5). The ATT&CK section reported T1110, T1091 and T1070.004.
 
 ## Positioning and limitations
 
@@ -99,6 +101,9 @@ Sentinel-X does not claim algorithmic novelty. Correlating events and generating
 - Windows only; login monitoring needs Administrator rights.
 - Scoring constants (10 s gap, 1.5x multiplier, 3-source threshold) are reasoned defaults, not tuned on labelled attack data, so no precision/recall figures are reported.
 - ATT&CK coverage is intentionally small; most mappings are low-confidence indicators.
+- Event timestamps record when the collector processed an event, which can lag the real Windows event time by up to one poll interval (the real time is kept in `raw_data`, and brute-force detection uses it).
+- The fixed 10-second clustering gap is a hard boundary: in Run B, the failed logins and the brute-force alert were split across two clusters because the gap was exceeded by 0.03 seconds.
+- Successful logins count as a source toward the "3+ sources" flagging rule, so a busy session can flag most clusters.
 - Not included: network/packet monitoring, graphical dashboard, LLM explanation layer.
 
 ## Future work
