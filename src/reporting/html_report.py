@@ -26,6 +26,8 @@ details { background: #fff; border-radius: 8px; margin-top: 10px; padding: 10px 
 details.flagged { border-left: 5px solid #c0392b; }
 summary { cursor: pointer; font-weight: bold; }
 .bar { background: #1c7c8c; height: 12px; border-radius: 6px; }
+table.counts th:nth-child(1), table.counts td:nth-child(1) { width: 30%; }
+table.counts th:nth-child(2), table.counts td:nth-child(2) { width: 10%; text-align: right; }
 """
 
 
@@ -53,7 +55,7 @@ def _count_table(title: str, counts: dict, total: int) -> str:
             "<tr><td>" + _e(name) + '</td><td class="num">' + str(count) + "</td>"
             '<td><div class="bar" style="width:' + str(pct) + '%"></div></td></tr>'
         )
-    return ("<h3>" + _e(title) + "</h3><table><tr><th>Name</th><th>Count</th><th></th></tr>"
+        return ("<h3>" + _e(title) + '</h3><table class="counts"><tr><th>Name</th><th>Count</th><th></th></tr>'
             + "".join(rows) + "</table>")
 
 
