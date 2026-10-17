@@ -25,3 +25,5 @@ data/
 
 # Test artifacts
 watch_test/
+
+reports/
