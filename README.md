@@ -74,6 +74,7 @@ Open PowerShell **as Administrator** (required to read the Windows Security log)
 python run_all.py      # start all four collectors; Ctrl+C to stop
 python report.py       # print the incident report
 python -m pytest -v    # run the test suite
+python make_report_html.py   # writes reports/incident_report.html
 ```
 
 To generate demo activity: open a few programs, create/edit/delete a file in `watch_test/`, plug in a USB drive.
