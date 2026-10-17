@@ -24,3 +24,13 @@ def test_html_report_escapes_attacker_controlled_text():
     html = _html_for("<script>alert(1)</script>")
     assert "<script>" not in html
     assert "&lt;script&gt;" in html
+
+def test_html_report_escapes_explanation_text():
+    conn = init_db(":memory:")
+    insert_event(conn, Event(
+        host="h", source="file_monitor", event_type="file_created",
+        severity="low", description="a.txt", raw_data={},
+    ))
+    html = render_html(build_report_data(conn), explanations={1: "Seen <b>bold</b> [E1]"})
+    assert "&lt;b&gt;bold&lt;/b&gt;" in html
+    assert "<b>bold</b>" not in html

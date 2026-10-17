@@ -28,6 +28,7 @@ summary { cursor: pointer; font-weight: bold; }
 .bar { background: #1c7c8c; height: 12px; border-radius: 6px; }
 table.counts th:nth-child(1), table.counts td:nth-child(1) { width: 30%; }
 table.counts th:nth-child(2), table.counts td:nth-child(2) { width: 10%; text-align: right; }
+.explain { background: #eef2f7; border-left: 4px solid #1c7c8c; padding: 8px 12px; margin: 10px 0; font-size: 14px; }
 """
 
 
@@ -59,7 +60,7 @@ def _count_table(title: str, counts: dict, total: int) -> str:
             + "".join(rows) + "</table>")
 
 
-def _cluster_html(index: int, cluster: dict) -> str:
+def _cluster_html(index: int, cluster: dict, explanation=None, label="Automated summary") -> str:
     flagged = cluster["flagged"]
     badge = '<span class="badge flagged">FLAGGED</span>' if flagged else ""
     sources = ", ".join(_e(s) for s in cluster["sources"])
@@ -70,16 +71,21 @@ def _cluster_html(index: int, cluster: dict) -> str:
             + _e(ev["description"]) + _attack_tag(ev["attack"])
             + '</td><td class="num">' + format(ev["score"], ".1f") + "</td></tr>"
         )
+    note = ""
+    if explanation:
+        note = '<p class="explain"><b>' + _e(label) + ":</b> " + _e(explanation) + "</p>"
     return (
         "<details" + (' class="flagged" open' if flagged else "") + "><summary>"
         + "Cluster " + str(index) + ": " + _e(cluster["start"]) + " to " + _e(cluster["end"])
         + " | " + str(cluster["event_count"]) + " events | " + sources + badge + "</summary>"
+        + note
         + "<table><tr><th>Time</th><th>Source</th><th>Event</th><th>Score</th></tr>"
         + "".join(rows) + "</table></details>"
     )
 
 
-def render_html(data: dict) -> str:
+def render_html(data: dict, explanations=None, explanation_label="Automated summary") -> str:
+    explanations = explanations or {}
     """Turn the dict from build_report_data into one self-contained HTML page."""
     top_score = data["top_events"][0]["score"] if data["top_events"] else 0
 
@@ -100,7 +106,10 @@ def render_html(data: dict) -> str:
         for e in data["top_events"]
     )
 
-    clusters = "".join(_cluster_html(i, c) for i, c in enumerate(data["clusters"], start=1))
+    clusters = "".join(
+        _cluster_html(i, c, explanations.get(i), explanation_label)
+        for i, c in enumerate(data["clusters"], start=1)
+    )
     generated = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     return (
