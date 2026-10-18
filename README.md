@@ -20,6 +20,7 @@ Sentinel-X watches a single Windows machine through four independent collectors,
 - **Timeline Engine** — clusters events by time gap (10 s, measured from the most recent clustered event) and flags a cluster if it contains a medium/high severity event or involves 3+ distinct collectors.
 - **Threat Scoring** — per-event-type baseline score (1 to 9), multiplied by 1.5 inside a flagged cluster.
 - **MITRE ATT&CK tagging** — brute force (T1110), removable media (T1091), file deletion (T1070.004), each labelled with an honest confidence level. Routine activity is intentionally left unmapped.
+- **HTML incident report and automated summaries** — `make_report_html.py` renders a self-contained page; every piece of event text is HTML-escaped. Each flagged cluster gets a short template-based summary that cites events by label ([E1], [E2]...) and states why the cluster was flagged. This is not AI-generated; a language-model adapter can be plugged into the same function, and its output is rejected if it cites an event that does not exist.
 
 ---
 
