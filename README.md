@@ -48,6 +48,9 @@ config/default.yaml
 tests/         26 pytest tests
 run_all.py     starts all collectors concurrently
 report.py      generates the incident report
+  reporting/   report_data.py, html_report.py
+  ai/          explainer.py
+make_report_html.py   writes reports/incident_report.html
 ```
 
 **Security decisions**
@@ -88,7 +91,7 @@ To generate demo activity: open a few programs, create/edit/delete a file in `wa
 
 ## Testing
 
-26 automated tests cover config validation, storage and filtered queries (in-memory SQLite), file hashing and debouncing, USB diffing, brute-force detection (including a boundary test at the window edge), clustering and flagging, scoring, and ATT&CK mapping.
+34 automated tests cover config validation, storage and filtered queries (in-memory SQLite), file hashing and debouncing, USB diffing, brute-force detection (including a boundary test at the window edge), clustering and flagging, scoring, and ATT&CK mapping...scoring, ATT&CK mapping, report data, HTML escaping and the explainer’s citation checks.
 
 ## Results (live runs on the development machine)
 
@@ -106,7 +109,7 @@ Sentinel-X does not claim algorithmic novelty. Correlating events and generating
 - Event timestamps record when the collector processed an event, which can lag the real Windows event time by up to one poll interval (the real time is kept in `raw_data`, and brute-force detection uses it).
 - The fixed 10-second clustering gap is a hard boundary: in Run B, the failed logins and the brute-force alert were split across two clusters because the gap was exceeded by 0.03 seconds.
 - Successful logins count as a source toward the "3+ sources" flagging rule, so a busy session can flag most clusters.
-- Not included: network/packet monitoring, graphical dashboard, LLM explanation layer.
+- Not included: network/packet monitoring, a graphical dashboard, and a connected language model (the explainer is template-based for now).
 
 ## Future work
 
