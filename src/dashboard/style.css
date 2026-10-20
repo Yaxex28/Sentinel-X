@@ -1,0 +1,24 @@
+body { font-family: Segoe UI, Arial, sans-serif; margin: 0; background: #f4f6fa; color: #14213d; }
+header { background: #0b132b; color: #fff; padding: 20px 40px; }
+header h1 { margin: 0 0 4px 0; font-size: 26px; }
+#status { margin: 0; color: #b8c4d6; font-size: 14px; }
+#status.error { color: #ffb4a9; font-weight: bold; }
+main { max-width: 1000px; margin: 0 auto; padding: 24px 40px 60px; }
+h2 { margin-top: 36px; border-bottom: 2px solid #1c7c8c; padding-bottom: 6px; }
+.stats { display: flex; gap: 16px; }
+.stat { flex: 1; background: #fff; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.stat .n { font-size: 34px; font-weight: bold; color: #1c7c8c; }
+.stat .l { font-size: 13px; color: #5c6b7a; }
+table { width: 100%; border-collapse: collapse; background: #fff; margin-top: 10px; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #e3e8ef; }
+th { background: #d9e2f3; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.counts td:nth-child(1) { width: 30%; }
+table.counts td:nth-child(2) { width: 10%; }
+.bar { background: #1c7c8c; height: 12px; border-radius: 6px; }
+.badge { padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; color: #fff; background: #c0392b; margin-left: 8px; }
+.attack { background: #1c7c8c; color: #fff; padding: 1px 7px; border-radius: 8px; font-size: 12px; margin-left: 6px; }
+details { background: #fff; border-radius: 8px; margin-top: 10px; padding: 10px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+details.flagged { border-left: 5px solid #c0392b; }
+summary { cursor: pointer; font-weight: bold; }
+.explain { background: #eef2f7; border-left: 4px solid #1c7c8c; padding: 8px 12px; margin: 10px 0; font-size: 14px; }
