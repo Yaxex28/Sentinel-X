@@ -6,7 +6,15 @@
         <link rel="stylesheet" href="/style.css">
     </head>
     <body>
-        <header><h1>Sentinel-X Dashboard</h1><p id="status">Loading...</p></header>
+       <header>
+            <h1>Sentinel-X Dashboard</h1>
+            <p id="status">Loading...</p>
+            <div id="controls">
+            <button id="monitor-btn" class="start" type="button">Start monitoring</button>
+            <span id="monitor-status"></span>
+            </div>
+            <p id="monitor-warn"></p>
+        </header>
         <main id="root"></main>
         <script src="/app.js"></script>
     </body>

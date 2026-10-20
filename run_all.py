@@ -29,8 +29,11 @@ def start_usb_monitor():
 
 
 def start_login_monitor():
-    conn = init_db(DB_PATH)
-    run_login_monitor(conn=conn, host=HOST, poll_interval_seconds=POLL_INTERVAL)
+    try:
+        conn = init_db(DB_PATH)
+        run_login_monitor(conn=conn, host=HOST, poll_interval_seconds=POLL_INTERVAL)
+    except Exception as err:
+        print("[!] Login monitor stopped: " + str(err) + " (run as Administrator?)")
 
 
 process_thread = threading.Thread(target=start_process_monitor, daemon=True)

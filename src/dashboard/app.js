@@ -137,5 +137,48 @@ async function refresh() {
   }
 }
 
+function applyMonitorState(s) {
+  const btn = document.getElementById("monitor-btn");
+  const label = document.getElementById("monitor-status");
+  btn.textContent = s.running ? "Stop monitoring" : "Start monitoring";
+  btn.className = s.running ? "stop" : "start";
+  btn.disabled = false;
+  if (s.running) label.textContent = "Monitoring (PID " + s.pid + ")";
+  else if (s.exit_code !== null) label.textContent = "Runner exited on its own (exit code " + s.exit_code + "). See logs/monitors.log";
+  else label.textContent = "Not running";
+  document.getElementById("monitor-warn").textContent = s.is_admin
+    ? ""
+    : "Not running as Administrator: login monitoring will not work. Restart the dashboard from an Administrator PowerShell.";
+}
+
+async function refreshMonitor() {
+  try {
+    const response = await fetch("/api/monitor", { cache: "no-store" });
+    if (response.ok) applyMonitorState(await response.json());
+  } catch (err) {
+    // the main status line already reports an unreachable server
+  }
+}
+
+async function toggleMonitor() {
+  const btn = document.getElementById("monitor-btn");
+  const label = document.getElementById("monitor-status");
+  const wasRunning = btn.className === "stop";
+  btn.disabled = true;
+  try {
+    const response = await fetch(wasRunning ? "/api/monitor/stop" : "/api/monitor/start", {
+      method: "POST",
+      headers: { "X-Sentinel-Action": "1" },
+    });
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    applyMonitorState(await response.json());
+  } catch (err) {
+    label.textContent = "Action failed: " + err.message;
+    btn.disabled = false;
+  }
+}
+
+document.getElementById("monitor-btn").addEventListener("click", toggleMonitor);
 refresh();
-setInterval(refresh, REFRESH_MS);
+refreshMonitor();
+setInterval(() => { refresh(); refreshMonitor(); }, REFRESH_MS);
