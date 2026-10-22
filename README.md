@@ -79,6 +79,7 @@ python run_all.py      # start all four collectors; Ctrl+C to stop
 python report.py       # print the incident report
 python -m pytest -v    # run the test suite
 python make_report_html.py   # writes reports/incident_report.html
+python run_dashboard.py   # run from an Administrator PowerShell; start/stop monitoring from the page
 ```
 
 To generate demo activity: open a few programs, create/edit/delete a file in `watch_test/`, plug in a USB drive.
