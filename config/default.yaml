@@ -19,3 +19,11 @@ monitoring:
       - "modified"
   usb:
     auto_scan_on_insert: false
+  network:
+    poll_interval_seconds: 5
+    ignore_processes: []
+    suspecious_ports:
+      - 4444
+      - 6667
+      - 31337
+      

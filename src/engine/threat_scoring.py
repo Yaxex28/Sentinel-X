@@ -7,6 +7,9 @@ BASELINE_SCORES ={
         "login_failure": 4,
         "usb_inserted": 5,
         "brute_force_detected": 9,
+        "network_connection_new": 1,
+        "network_suspicious_port": 5,
+        "listening_port_opened": 2,
 }
 
 def apply_cluster_multiplier(base_score:float, cluster_is_interesting:bool) -> float:
