@@ -15,8 +15,7 @@ Sentinel-X watches a single Windows machine through four independent collectors,
 | File Integrity Monitor | File create/modify/delete | `watchdog` OS notifications, debouncing, SHA-256 verification |
 | USB Detector | Drive insertion | Drive-letter snapshot diffing |
 | Login Monitor | Windows logon events 4624/4625 | `pywin32`, sliding-window brute-force detection (5 failures / 60 s) |
-|Network Monitor | New outbound destinatons and new listening ports |
-psutil connections snapshots; first-seen ( process,IP,port) triples; no DNS lookup |
+|Network Monitor | New outbound destinatons and new listening ports | psutil connections snapshots; first-seen ( process,IP,port) triples; no DNS lookup .
 
 **Analytics layer**
 - **Timeline Engine** — clusters events by time gap (10 s, measured from the most recent clustered event) and flags a cluster if it contains a medium/high severity event or involves 3+ distinct collectors.
