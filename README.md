@@ -15,11 +15,13 @@ Sentinel-X watches a single Windows machine through four independent collectors,
 | File Integrity Monitor | File create/modify/delete | `watchdog` OS notifications, debouncing, SHA-256 verification |
 | USB Detector | Drive insertion | Drive-letter snapshot diffing |
 | Login Monitor | Windows logon events 4624/4625 | `pywin32`, sliding-window brute-force detection (5 failures / 60 s) |
+|Network Monitor | New outbound destinatons and new listening ports |
+psutil connections snapshots; first-seen ( process,IP,port) triples; no DNS lookup |
 
 **Analytics layer**
 - **Timeline Engine** — clusters events by time gap (10 s, measured from the most recent clustered event) and flags a cluster if it contains a medium/high severity event or involves 3+ distinct collectors.
 - **Threat Scoring** — per-event-type baseline score (1 to 9), multiplied by 1.5 inside a flagged cluster.
-- **MITRE ATT&CK tagging** — brute force (T1110), removable media (T1091), file deletion (T1070.004), each labelled with an honest confidence level. Routine activity is intentionally left unmapped.
+- **MITRE ATT&CK tagging** — brute force (T1110), removable media (T1091), file deletion (T1070.004), non-standard port (T1571), each labelled with an honest confidence level. Routine activity is intentionally left unmapped.
 - **HTML incident report and automated summaries** — `make_report_html.py` renders a self-contained page; every piece of event text is HTML-escaped. Each flagged cluster gets a short template-based summary that cites events by label ([E1], [E2]...) and states why the cluster was flagged. This is not AI-generated; a language-model adapter can be plugged into the same function, and its output is rejected if it cites an event that does not exist.
 
 ---
@@ -41,11 +43,11 @@ Collectors never touch storage or analysis logic; every collector emits the same
 ```
 src/
   core/        config.py, exceptions.py, logger.py, models.py
-  collectors/  process_monitor.py, file_monitor.py, usb_monitor.py, login_monitor.py
+  collectors/  process_monitor.py, file_monitor.py, usb_monitor.py, login_monitor.py, network_monitor.py
   engine/      timeline_engine.py, threat_scoring.py, attack_mapping.py
   storage/     database.py, repository.py
 config/default.yaml
-tests/         26 pytest tests
+tests/         49 pytest tests
 run_all.py     starts all collectors concurrently
 report.py      generates the incident report
   reporting/   report_data.py, html_report.py
@@ -110,8 +112,9 @@ Sentinel-X does not claim algorithmic novelty. Correlating events and generating
 - Event timestamps record when the collector processed an event, which can lag the real Windows event time by up to one poll interval (the real time is kept in `raw_data`, and brute-force detection uses it).
 - The fixed 10-second clustering gap is a hard boundary: in Run B, the failed logins and the brute-force alert were split across two clusters because the gap was exceeded by 0.03 seconds.
 - Successful logins count as a source toward the "3+ sources" flagging rule, so a busy session can flag most clusters.
-- Not included: network/packet monitoring, a graphical dashboard, and a connected language model (the explainer is template-based for now).
+- Not included: packet capture, a graphical dashboard, and a connected language model (the explainer is template-based for now).
+- The network monitor records the first appearance of a destination, so connection volume and beaconing are not visible, and connections that open and close between polls are missed.
 
 ## Future work
 
-Network monitoring, labelled-data evaluation of the scoring constants, a dashboard, and an LLM layer that explains flagged clusters from stored evidence.
+Network monitoring, labelled-data evaluation of the scoring constants, a dashboard, and an LLM layer that explains flagged clusters from stored evidence.per-destination connection counts and beaconing detection
