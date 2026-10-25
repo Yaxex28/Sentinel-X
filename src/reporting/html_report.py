@@ -106,6 +106,13 @@ def render_html(data: dict, explanations=None, explanation_label="Automated summ
         for e in data["top_events"]
     )
 
+    iocs = "".join(
+        "<tr><td>" + _e(i["type"]) + "</td><td><code>" + _e(i["value"]) + '</code></td><td class="num">'
+        + str(i["count"]) + "</td><td>" + _e(i["first_seen"]) + "</td><td>" + _e(i["last_seen"])
+        + "</td><td>" + _e(", ".join(i["contexts"])) + "</td></tr>"
+        for i in data["iocs"]
+    ) or '<tr><td colspan="6">None extracted</td></tr>'
+
     clusters = "".join(
         _cluster_html(i, c, explanations.get(i), explanation_label)
         for i, c in enumerate(data["clusters"], start=1)
@@ -131,6 +138,8 @@ def render_html(data: dict, explanations=None, explanation_label="Automated summ
         + techniques + "</table>"
         + "<h2>Highest-scored events</h2><table><tr><th>Score</th><th>Time</th><th>Event</th></tr>"
         + top_events + "</table>"
+        + "<h2>Indicators of compromise</h2><table><tr><th>Type</th><th>Value</th><th>Events</th><th>First seen</th><th>Last seen</th><th>Seen in</th></tr>"
+        + iocs + "</table>"
         + "<h2>Activity clusters</h2>" + clusters
         + "</main></body></html>"
     )

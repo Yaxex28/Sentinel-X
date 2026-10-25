@@ -41,7 +41,7 @@ class FileEventHandler(FileSystemEventHandler):
             event_type="file_modified",
             severity="low",
             description=f"File modified: {event.src_path}",
-            raw_data={"path": event.src_path}
+            raw_data={"path": event.src_path, "sha256": file_hashes.get(event.src_path)}
         )
         insert_event(self._get_conn(), file_event)
         print(f"[+] {file_event.description}")
@@ -60,7 +60,7 @@ class FileEventHandler(FileSystemEventHandler):
             event_type="file_created",
             severity="low",
             description=f"File created: {event.src_path}",
-            raw_data={"path": event.src_path}
+            raw_data={"path": event.src_path, "sha256": file_hashes.get(event.src_path)}
         )
         insert_event(self._get_conn(), file_event)
         print(f"[+] {file_event.description}")
@@ -77,7 +77,7 @@ class FileEventHandler(FileSystemEventHandler):
             event_type="file_deleted",
             severity="low",
             description=f"File deleted: {event.src_path}",
-            raw_data={"path": event.src_path}
+            raw_data={"path": event.src_path, "sha256": file_hashes.get(event.src_path)}
         )
         insert_event(self._get_conn(), file_event)
         print(f"[+] {file_event.description}")

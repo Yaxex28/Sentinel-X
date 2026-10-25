@@ -105,6 +105,12 @@ function section(id, title, children) {
   return node;
 }
 
+function codeCell(value) {
+  const td = el("td", null, "ioc");
+  td.append(el("code", value));
+  return td;
+}
+
 function render(data) {
   const topTable = data.top_events.length
     ? simpleTable(["Score", "Time", "Event"],
@@ -133,12 +139,20 @@ function render(data) {
       : emptyNote("No techniques observed."),
   ]);
 
+  const iocs = section("iocs", "Indicators of compromise", [
+    data.iocs.length
+      ? simpleTable(["Type", "Value", "Events", "First seen", "Last seen", "Seen in"],
+          data.iocs.map((i) => [el("td", i.type), codeCell(i.value), el("td", i.count, "num"),
+            el("td", i.first_seen), el("td", i.last_seen), el("td", i.contexts.join(", "))]))
+      : emptyNote("No indicators extracted yet."),
+  ]);
+
   const clusterNodes = data.clusters.length
     ? data.clusters.map((c, i) => clusterNode(c, i + 1))
     : [emptyNote("No events collected yet. Press Start monitoring.")];
   const clusters = section("clusters", "Activity clusters", clusterNodes);
 
-  document.getElementById("root").replaceChildren(overview, alerts, attack, clusters);
+  document.getElementById("root").replaceChildren(overview, alerts, attack, iocs, clusters);
 }
 
 async function refresh() {

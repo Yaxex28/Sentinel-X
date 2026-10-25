@@ -1,5 +1,5 @@
 from collections import Counter
-
+from engine.ioc_extractor import extract_iocs
 from storage.repository import query_events
 from engine.timeline_engine import cluster_events, summarize_cluster, is_interesting
 from engine.threat_scoring import score_event
@@ -66,4 +66,5 @@ def build_report_data(conn, gap_seconds: int = 10) -> dict:
         "clusters": clusters,
         "flagged_count": sum(1 for c in clusters if c["flagged"]),
         "top_events": sorted(scored, key=lambda e: e["score"], reverse=True)[:5],
+        "iocs": extract_iocs(rows),
     }

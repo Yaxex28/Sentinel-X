@@ -34,3 +34,15 @@ def test_html_report_escapes_explanation_text():
     html = render_html(build_report_data(conn), explanations={1: "Seen <b>bold</b> [E1]"})
     assert "&lt;b&gt;bold&lt;/b&gt;" in html
     assert "<b>bold</b>" not in html
+
+def test_html_report_escapes_indicator_context():
+    conn = init_db(":memory:")
+    insert_event(conn, Event(
+        host="h", source="network_monitor", event_type="network_connection_new",
+        severity="low", description="d",
+        raw_data={"process": "<b>x</b>", "remote_ip": "93.184.216.34", "remote_port": 443},
+    ))
+    html = render_html(build_report_data(conn))
+    assert "93.184.216.34" in html
+    assert "&lt;b&gt;x&lt;/b&gt;" in html
+    assert "<b>x</b>" not in html

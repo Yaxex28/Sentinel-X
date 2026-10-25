@@ -29,6 +29,12 @@ def print_report(data: dict, show_all: bool = False):
     for t in data["techniques"]:
         print(f"  {t['technique_id']:10s} {t['technique']} ({t['tactic']}): {t['count']} event(s)")
 
+    print(f"\n-- Indicators of Compromise ({len(data['iocs'])}) --")
+    if not data["iocs"]:
+        print("  (none)")
+    for i in data["iocs"]:
+        print(f"  {i['type']:7s} {i['value']}  x{i['count']}  {', '.join(i['contexts'])}")
+        
     print(f"\n-- Activity Clusters ({len(data['clusters'])} total) --")
     for c in data["clusters"]:
         flag = "  [FLAGGED]" if c["flagged"] else ""
