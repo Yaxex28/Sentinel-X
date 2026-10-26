@@ -32,9 +32,10 @@ def print_report(data: dict, show_all: bool = False):
     print(f"\n-- Indicators of Compromise ({len(data['iocs'])}) --")
     if not data["iocs"]:
         print("  (none)")
-    for i in data["iocs"]:
+    for i in data["iocs"][:10]:
         print(f"  {i['type']:7s} {i['value']}  x{i['count']}  {', '.join(i['contexts'])}")
-        
+    if len(data["iocs"]) > 10:
+        print(f"  ... and {len(data['iocs']) - 10} more (see the HTML report or dashboard)")        
     print(f"\n-- Activity Clusters ({len(data['clusters'])} total) --")
     for c in data["clusters"]:
         flag = "  [FLAGGED]" if c["flagged"] else ""

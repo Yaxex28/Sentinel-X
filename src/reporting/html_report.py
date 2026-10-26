@@ -138,8 +138,9 @@ def render_html(data: dict, explanations=None, explanation_label="Automated summ
         + techniques + "</table>"
         + "<h2>Highest-scored events</h2><table><tr><th>Score</th><th>Time</th><th>Event</th></tr>"
         + top_events + "</table>"
-        + "<h2>Indicators of compromise</h2><table><tr><th>Type</th><th>Value</th><th>Events</th><th>First seen</th><th>Last seen</th><th>Seen in</th></tr>"
-        + iocs + "</table>"
+        + "<h2>Indicators of compromise</h2><details><summary>Show " + str(len(data["iocs"]))
+        + " indicators</summary><table><tr><th>Type</th><th>Value</th><th>Events</th><th>First seen</th><th>Last seen</th><th>Seen in</th></tr>"
+        + iocs + "</table></details>"
         + "<h2>Activity clusters</h2>" + clusters
         + "</main></body></html>"
     )

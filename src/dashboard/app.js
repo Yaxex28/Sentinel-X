@@ -111,6 +111,31 @@ function codeCell(value) {
   return td;
 }
 
+function iocTable(list) {
+  return simpleTable(["Type", "Value", "Events", "First seen", "Last seen", "Seen in"],
+    list.map((i) => [el("td", i.type), codeCell(i.value), el("td", i.count, "num"),
+      el("td", i.first_seen), el("td", i.last_seen), el("td", i.contexts.join(", "))]));
+}
+
+function iocGroup(key, title, list) {
+  const details = el("details");
+  details.open = openState[key] === true;
+  details.addEventListener("toggle", () => { openState[key] = details.open; });
+  details.append(el("summary", title), iocTable(list));
+  return details;
+}
+
+function iocNodes(data) {
+  if (!data.iocs.length) return [emptyNote("No indicators extracted yet.")];
+  const ips = data.iocs.filter((i) => i.type === "ip");
+  const hashes = data.iocs.filter((i) => i.type === "sha256");
+  const v6 = ips.filter((i) => i.value.includes(":")).length;
+  const nodes = [el("p", "Every public address this machine contacted is listed here. Most are ordinary browser and service traffic, so treat this as raw material for an investigation, not a list of threats.")];
+  if (ips.length) nodes.push(iocGroup("ioc-ip", "IP addresses: " + ips.length + " (" + (ips.length - v6) + " IPv4, " + v6 + " IPv6)", ips));
+  if (hashes.length) nodes.push(iocGroup("ioc-sha256", "File hashes: " + hashes.length, hashes));
+  return nodes;
+}
+
 function render(data) {
   const topTable = data.top_events.length
     ? simpleTable(["Score", "Time", "Event"],
@@ -139,13 +164,7 @@ function render(data) {
       : emptyNote("No techniques observed."),
   ]);
 
-  const iocs = section("iocs", "Indicators of compromise", [
-    data.iocs.length
-      ? simpleTable(["Type", "Value", "Events", "First seen", "Last seen", "Seen in"],
-          data.iocs.map((i) => [el("td", i.type), codeCell(i.value), el("td", i.count, "num"),
-            el("td", i.first_seen), el("td", i.last_seen), el("td", i.contexts.join(", "))]))
-      : emptyNote("No indicators extracted yet."),
-  ]);
+  const iocs = section("iocs", "Indicators of compromise", iocNodes(data));
 
   const clusterNodes = data.clusters.length
     ? data.clusters.map((c, i) => clusterNode(c, i + 1))
