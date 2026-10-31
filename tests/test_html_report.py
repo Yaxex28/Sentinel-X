@@ -46,3 +46,18 @@ def test_html_report_escapes_indicator_context():
     assert "93.184.216.34" in html
     assert "&lt;b&gt;x&lt;/b&gt;" in html
     assert "<b>x</b>" not in html
+
+def test_html_report_lists_notable_indicators_with_reason():
+    conn = init_db(":memory:")
+    insert_event(conn, Event(
+        host="h", source="network_monitor", event_type="network_connection_new",
+        severity="low", description="d",
+        raw_data={"process": "a.exe", "remote_ip": "93.184.216.34", "remote_port": 443},
+    ))
+    insert_event(conn, Event(
+        host="h", source="usb_monitor", event_type="usb_inserted",
+        severity="medium", description="USB", raw_data={"drive": "E"},
+    ))
+    html = render_html(build_report_data(conn))
+    assert "Notable (1)" in html
+    assert "seen during elevated activity (cluster 1)" in html

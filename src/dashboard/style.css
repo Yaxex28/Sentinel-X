@@ -152,7 +152,8 @@ th {
   letter-spacing: 0.06em;
   border-bottom: 1px solid var(--line);
 }
-td.num { text-align: right; white-space: nowrap; padding: 8px 16px 8px 8px; }td code { margin-left: 8px; color: var(--accent); }
+td.num { text-align: right; white-space: nowrap; padding: 8px 16px 8px 8px; }
+td code { margin-left: 8px; color: var(--accent); }
 
 /* ---------- Clusters ---------- */
 details { border-top: 1px solid var(--line-soft); padding: 10px 0; }

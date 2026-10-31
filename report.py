@@ -29,24 +29,14 @@ def print_report(data: dict, show_all: bool = False):
     for t in data["techniques"]:
         print(f"  {t['technique_id']:10s} {t['technique']} ({t['tactic']}): {t['count']} event(s)")
 
-    print(f"\n-- Indicators of Compromise ({len(data['iocs'])}) --")
-    if not data["iocs"]:
-        print("  (none)")
-    for i in data["iocs"][:10]:
-        print(f"  {i['type']:7s} {i['value']}  x{i['count']}  {', '.join(i['contexts'])}")
-    if len(data["iocs"]) > 10:
-        print(f"  ... and {len(data['iocs']) - 10} more (see the HTML report or dashboard)")        
-    print(f"\n-- Activity Clusters ({len(data['clusters'])} total) --")
-    for c in data["clusters"]:
-        flag = "  [FLAGGED]" if c["flagged"] else ""
-        print(f"{c['start']} to {c['end']} | {c['event_count']} events | sources: {c['sources']}{flag}")
-        if c["flagged"] or show_all:
-            for ev in c["events"]:
-                tag = ""
-                if ev["attack"]:
-                    tag = "  [" + ev["attack"]["technique_id"] + " " + ev["attack"]["technique"] + "]"
-                print(f"    score={ev['score']:5.1f}   {ev['description']}{tag}")
-
+    notable = [i for i in data["iocs"] if i["reasons"]]
+    print(f"\n-- Indicators of Compromise ({len(data['iocs'])} total, {len(notable)} notable) --")
+    if not notable:
+        print("  (no notable indicators)")
+    for i in notable[:10]:
+        print(f"  {i['type']:7s} {i['value']}  x{i['count']}  {'; '.join(i['reasons'])}")
+    if len(notable) > 10:
+        print(f"  ... and {len(notable) - 10} more (see the HTML report or dashboard)")
     print(f"\n{data['flagged_count']} of {len(data['clusters'])} clusters flagged as noteworthy.")
 
     print("\n-- Top 5 Highest-Scored Events --")

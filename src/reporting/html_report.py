@@ -83,6 +83,40 @@ def _cluster_html(index: int, cluster: dict, explanation=None, label="Automated 
         + "".join(rows) + "</table></details>"
     )
 
+def _ioc_table(items, with_why: bool) -> str:
+    if with_why:
+        head = "<tr><th>Type</th><th>Value</th><th>Events</th><th>Why</th><th>Seen in</th></tr>"
+    else:
+        head = "<tr><th>Type</th><th>Value</th><th>Events</th><th>First seen</th><th>Last seen</th><th>Seen in</th></tr>"
+    rows = []
+    for i in items:
+        cells = [
+            "<td>" + _e(i["type"]) + "</td>",
+            "<td><code>" + _e(i["value"]) + "</code></td>",
+            '<td class="num">' + str(i["count"]) + "</td>",
+        ]
+        if with_why:
+            cells.append("<td>" + _e("; ".join(i["reasons"])) + "</td>")
+        else:
+            cells.append("<td>" + _e(i["first_seen"]) + "</td><td>" + _e(i["last_seen"]) + "</td>")
+        cells.append("<td>" + _e(", ".join(i["contexts"])) + "</td>")
+        rows.append("<tr>" + "".join(cells) + "</tr>")
+    return "<table>" + head + "".join(rows) + "</table>"
+
+
+def _ioc_section(iocs) -> str:
+    notable = [i for i in iocs if i.get("reasons")]
+    rest = [i for i in iocs if not i.get("reasons")]
+    html = "<h2>Indicators of compromise</h2>"
+    html += "<h3>Notable (" + str(len(notable)) + ")</h3>"
+    if notable:
+        html += _ioc_table(notable, True)
+    else:
+        html += "<p>None.</p>"
+    if rest:
+        html += ("<details><summary>All other indicators (" + str(len(rest)) + ")</summary>"
+                 + _ioc_table(rest, False) + "</details>")
+    return html
 
 def render_html(data: dict, explanations=None, explanation_label="Automated summary") -> str:
     explanations = explanations or {}
@@ -105,13 +139,6 @@ def render_html(data: dict, explanations=None, explanation_label="Automated summ
         + "</td><td>" + _e(e["description"]) + _attack_tag(e["attack"]) + "</td></tr>"
         for e in data["top_events"]
     )
-
-    iocs = "".join(
-        "<tr><td>" + _e(i["type"]) + "</td><td><code>" + _e(i["value"]) + '</code></td><td class="num">'
-        + str(i["count"]) + "</td><td>" + _e(i["first_seen"]) + "</td><td>" + _e(i["last_seen"])
-        + "</td><td>" + _e(", ".join(i["contexts"])) + "</td></tr>"
-        for i in data["iocs"]
-    ) or '<tr><td colspan="6">None extracted</td></tr>'
 
     clusters = "".join(
         _cluster_html(i, c, explanations.get(i), explanation_label)
@@ -138,9 +165,7 @@ def render_html(data: dict, explanations=None, explanation_label="Automated summ
         + techniques + "</table>"
         + "<h2>Highest-scored events</h2><table><tr><th>Score</th><th>Time</th><th>Event</th></tr>"
         + top_events + "</table>"
-        + "<h2>Indicators of compromise</h2><details><summary>Show " + str(len(data["iocs"]))
-        + " indicators</summary><table><tr><th>Type</th><th>Value</th><th>Events</th><th>First seen</th><th>Last seen</th><th>Seen in</th></tr>"
-        + iocs + "</table></details>"
+        + _ioc_section(data["iocs"])
         + "<h2>Activity clusters</h2>" + clusters
         + "</main></body></html>"
     )

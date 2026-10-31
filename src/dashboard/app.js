@@ -125,14 +125,28 @@ function iocGroup(key, title, list) {
   return details;
 }
 
+function iocNotableTable(list) {
+  return simpleTable(["Type", "Value", "Events", "Why", "Seen in"],
+    list.map((i) => [el("td", i.type), codeCell(i.value), el("td", i.count, "num"),
+      el("td", (i.reasons || []).join("; ")), el("td", i.contexts.join(", "))]));
+}
+
 function iocNodes(data) {
   if (!data.iocs.length) return [emptyNote("No indicators extracted yet.")];
-  const ips = data.iocs.filter((i) => i.type === "ip");
-  const hashes = data.iocs.filter((i) => i.type === "sha256");
+  const notable = data.iocs.filter((i) => (i.reasons || []).length);
+  const rest = data.iocs.filter((i) => !(i.reasons || []).length);
+  const nodes = [el("p", "Every public address this machine contacted is an indicator, and most are ordinary browser and service traffic. Indicators with extra context are listed first; the rest are in the dropdowns.")];
+  nodes.push(el("h3", "Notable (" + notable.length + ")"));
+  nodes.push(notable.length
+    ? iocNotableTable(notable)
+    : emptyNote("None. No indicator was tied to a suspicious port, a deleted file, or a cluster with elevated severity."));
+  nodes.push(el("h3", "Everything else (" + rest.length + ")"));
+  const ips = rest.filter((i) => i.type === "ip");
+  const hashes = rest.filter((i) => i.type === "sha256");
   const v6 = ips.filter((i) => i.value.includes(":")).length;
-  const nodes = [el("p", "Every public address this machine contacted is listed here. Most are ordinary browser and service traffic, so treat this as raw material for an investigation, not a list of threats.")];
   if (ips.length) nodes.push(iocGroup("ioc-ip", "IP addresses: " + ips.length + " (" + (ips.length - v6) + " IPv4, " + v6 + " IPv6)", ips));
   if (hashes.length) nodes.push(iocGroup("ioc-sha256", "File hashes: " + hashes.length, hashes));
+  if (!rest.length) nodes.push(emptyNote("Nothing else."));
   return nodes;
 }
 

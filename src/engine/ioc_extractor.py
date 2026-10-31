@@ -6,6 +6,9 @@ SHA256 = re.compile(r"^[0-9a-f]{64}$")
 MAX_CONTEXTS = 3
 MAX_CONTEXT_LEN = 120
 
+REASON_SUSPICIOUS_PORT = "connected on a commonly abused port"
+REASON_DELETED = "file was deleted after being seen"
+
 
 def _public_ip(value):
     """Return the address as a string if it is a public (globally routable) IP, else None."""
@@ -25,6 +28,27 @@ def _sha256(value):
     return None
 
 
+def _parse_raw(row):
+    """Return the row's raw_data as a dict, or None if it is missing or not valid JSON."""
+    try:
+        raw = json.loads(row[7]) if row[7] else {}
+    except (ValueError, TypeError):
+        return None
+    return raw if isinstance(raw, dict) else None
+
+
+def _indicators(raw) -> list:
+    """Return the (type, value) indicators contained in one raw_data dict."""
+    found = []
+    ip = _public_ip(raw.get("remote_ip"))
+    if ip:
+        found.append(("ip", ip))
+    digest = _sha256(raw.get("sha256"))
+    if digest:
+        found.append(("sha256", digest))
+    return found
+
+
 def extract_iocs(rows) -> list:
     """Extract indicators of compromise from stored event rows.
 
@@ -37,20 +61,10 @@ def extract_iocs(rows) -> list:
     """
     found = {}
     for row in sorted(rows, key=lambda r: r[1]):
-        try:
-            raw = json.loads(row[7]) if row[7] else {}
-        except (ValueError, TypeError):
+        raw = _parse_raw(row)
+        if raw is None:
             continue
-        if not isinstance(raw, dict):
-            continue
-
-        candidates = []
-        ip = _public_ip(raw.get("remote_ip"))
-        if ip:
-            candidates.append(("ip", ip))
-        digest = _sha256(raw.get("sha256"))
-        if digest:
-            candidates.append(("sha256", digest))
+        candidates = _indicators(raw)
         if not candidates:
             continue
 
@@ -58,8 +72,8 @@ def extract_iocs(rows) -> list:
         for kind, value in candidates:
             entry = found.get((kind, value))
             if entry is None:
-                entry = {"type": kind, "value": value, "count": 0,
-                         "first_seen": row[1], "last_seen": row[1], "contexts": []}
+                entry = {"type": kind, "value": value, "count": 0, "first_seen": row[1],
+                         "last_seen": row[1], "contexts": [], "reasons": []}
                 found[(kind, value)] = entry
             entry["count"] += 1
             entry["last_seen"] = row[1]
@@ -67,3 +81,33 @@ def extract_iocs(rows) -> list:
                 entry["contexts"].append(context)
 
     return sorted(found.values(), key=lambda e: (-e["count"], e["last_seen"]))
+
+
+def annotate_iocs(iocs, groups) -> list:
+    """Attach a `reasons` list to each indicator that has context worth reviewing.
+
+    groups is a list of (cluster_number, rows, elevated), where rows are the
+    event rows of one cluster and elevated says that cluster contains a medium
+    or high severity event. An empty `reasons` list means ordinary activity.
+    """
+    reasons = {}
+    for number, rows, elevated in groups:
+        for row in rows:
+            raw = _parse_raw(row)
+            if raw is None:
+                continue
+            for key in _indicators(raw):
+                bucket = reasons.setdefault(key, [])
+                found = []
+                if row[4] == "network_suspicious_port":
+                    found.append(REASON_SUSPICIOUS_PORT)
+                if row[4] == "file_deleted":
+                    found.append(REASON_DELETED)
+                if elevated:
+                    found.append("seen during elevated activity (cluster " + str(number) + ")")
+                for reason in found:
+                    if reason not in bucket:
+                        bucket.append(reason)
+    for ioc in iocs:
+        ioc["reasons"] = reasons.get((ioc["type"], ioc["value"]), [])
+    return iocs

@@ -1,6 +1,6 @@
 import json
 
-from engine.ioc_extractor import extract_iocs
+from engine.ioc_extractor import extract_iocs, annotate_iocs
 
 
 def row(ts, event_type, raw, source="network_monitor"):
@@ -49,3 +49,28 @@ def test_broken_raw_data_is_skipped_not_fatal():
 def test_markup_in_remote_ip_field_is_rejected():
     rows = [row("t1", "x", {"remote_ip": "<script>alert(1)</script>"})]
     assert extract_iocs(rows) == []
+
+
+def test_suspicious_port_indicator_is_notable():
+    rows = [row("t1", "network_suspicious_port",
+                {"process": "a.exe", "remote_ip": "93.184.216.34", "remote_port": 4444})]
+    iocs = annotate_iocs(extract_iocs(rows), [(1, rows, False)])
+    assert iocs[0]["reasons"] == ["connected on a commonly abused port"]
+
+
+def test_indicator_in_elevated_cluster_names_the_cluster():
+    rows = [row("t1", "network_connection_new", {"process": "a.exe", "remote_ip": "93.184.216.34"})]
+    iocs = annotate_iocs(extract_iocs(rows), [(3, rows, True)])
+    assert iocs[0]["reasons"] == ["seen during elevated activity (cluster 3)"]
+
+
+def test_ordinary_indicator_has_no_reasons():
+    rows = [row("t1", "network_connection_new", {"process": "a.exe", "remote_ip": "93.184.216.34"})]
+    iocs = annotate_iocs(extract_iocs(rows), [(1, rows, False)])
+    assert iocs[0]["reasons"] == []
+
+
+def test_hash_of_a_deleted_file_is_notable():
+    rows = [row("t1", "file_deleted", {"path": "x.exe", "sha256": "a" * 64}, source="file_monitor")]
+    iocs = annotate_iocs(extract_iocs(rows), [(1, rows, False)])
+    assert "file was deleted after being seen" in iocs[0]["reasons"]
