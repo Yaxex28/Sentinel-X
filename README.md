@@ -111,9 +111,11 @@ Sentinel-X does not claim algorithmic novelty. Correlating events and generating
 - Event timestamps record when the collector processed an event, which can lag the real Windows event time by up to one poll interval (the real time is kept in `raw_data`, and brute-force detection uses it).
 - The fixed 10-second clustering gap is a hard boundary: in Run B, the failed logins and the brute-force alert were split across two clusters because the gap was exceeded by 0.03 seconds.
 - Successful logins count as a source toward the "3+ sources" flagging rule, so a busy session can flag most clusters.
-- Not included: packet capture, a graphical dashboard, and a connected language model (the explainer is template-based for now).
-- The network monitor records the first appearance of a destination, so connection volume and beaconing are not visible, and connections that open and close between polls are missed.
+- Not included: packet capture and a connected language model (the explainer is template-based for now).
+- The network monitor records the first appearance of a destination, so connection volume and beaconing are currently limited.
 
 ## Future work
 
-Network monitoring, labelled-data evaluation of the scoring constants, a dashboard, and an LLM layer that explains flagged clusters from stored evidence.per-destination connection counts and beaconing detection
+- Network monitoring improvements (frequency counting and beaconing detection).
+- Labelled-data evaluation of the scoring constants.
+- An LLM layer that explains flagged clusters from stored evidence.
