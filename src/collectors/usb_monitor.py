@@ -19,8 +19,8 @@ def detect_usb_changes(old_drives: set, new_drives: set):
     removed = old_drives - new_drives
     return inserted,removed
 
-def build_usb_events(inserted: set, host: str) -> list:
-    """Build Event objects for each newly inserted USB drive."""
+def build_usb_events(inserted: set, removed: set, host: str) -> list:
+    """Build Event objects for each newly inserted and removed USB drive."""
     events = []
     for drive in inserted:
         event = Event(
@@ -32,12 +32,21 @@ def build_usb_events(inserted: set, host: str) -> list:
             raw_data={"drive": drive}
         )
         events.append(event)
+    for drive in removed:
+        event = Event(
+            host=host,
+            source="usb_monitor",
+            event_type="usb_removed",
+            severity="low",
+            description=f"USB drive removed: {drive}:\\",
+            raw_data={"drive": drive}
+        )
+        events.append(event)
     return events
 
 
-
 def run_usb_monitor(conn, host: str, poll_interval_seconds: int, max_iterations: int = None):
-    """Continuously monitor for USB drive insertions and log them as Events."""
+    """Continuously monitor for USB drive insertions and removals and log them as Events."""
     snap1 = get_drives()
     count = 0
 
@@ -47,7 +56,7 @@ def run_usb_monitor(conn, host: str, poll_interval_seconds: int, max_iterations:
         snap2 = get_drives()
 
         inserted, removed = detect_usb_changes(snap1, snap2)
-        events = build_usb_events(inserted, host)
+        events = build_usb_events(inserted, removed, host)
 
         for event in events:
             insert_event(conn, event)
