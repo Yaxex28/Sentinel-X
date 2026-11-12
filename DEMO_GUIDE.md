@@ -3,8 +3,8 @@
 ## Before you present (do this the day before)
 
 1. Open PowerShell **as Administrator**, `cd` to the project.
-2. `python -m pytest -v` and confirm 26 passed.
-3. `del data\sentinel.db` so the demo data is fresh.
+2. `python -m pytest -v` and confirm 68 passed.
+3. `python clean_network_events.py` or `del data\sentinel.db` so the demo data is fresh.
 4. Do one full rehearsal of the steps below, then delete the DB again right before presenting.
 5. Keep a screenshot of a good `report.py` run as a backup in case the live demo misbehaves.
 
@@ -12,16 +12,16 @@
 
 **1. The problem (30 s).** Each monitoring tool writes its own log. Nobody ties them together, so an analyst sees noise, not a story.
 
-**2. Architecture (60 s).** Four collectors, one shared Event schema, SQLite, then the Timeline Engine, scoring and ATT&CK tagging. Say the key design rule: collectors only emit events, they never know about storage or analysis.
+**2. Architecture (60 s).** Five collectors (Process, File Integrity, USB, Login, Network), one shared Event schema, SQLite, then the Timeline Engine, scoring and ATT&CK tagging. Say the key design rule: collectors only emit events, they never know about storage or analysis. System process network noise is automatically quieted based on path verification.
 
 **3. Live demo (2 min).**
-- `python run_all.py`
-- Open Notepad and Calculator.
+- `python run_dashboard.py` (or `python run_all.py` from an Administrator PowerShell)
+- Open Notepad, Calculator, or a browser to generate process and network activity.
 - Create, edit and delete a file in `watch_test/`.
 - Plug in a USB drive.
 - Press Win+L and enter a wrong password 6 times in a row, then sign back in (the brute-force rule needs 5 failures within 60 seconds).
 - Wait about 20 seconds, press `Ctrl+C`.
-- `python report.py`
+- `python report.py` (or view `reports/incident_report.html` / open the live Dashboard UI)
 
 **4. Walk through the report (60 s).** Point at: total events and the four sources, the brute-force alert scoring 13.5 at the top of the highest-scored list, the USB events scoring 7.5 instead of 5, the `[FLAGGED]` clusters, and the ATT&CK section (T1110, T1091, T1070.004).
 
