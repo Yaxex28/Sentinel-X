@@ -15,7 +15,7 @@ Sentinel-X watches a single Windows machine through four independent collectors,
 | File Integrity Monitor | File create/modify/delete | `watchdog` OS notifications, debouncing, SHA-256 verification |
 | USB Detector | Drive insertion | Drive-letter snapshot diffing |
 | Login Monitor | Windows logon events 4624/4625 | `pywin32`, sliding-window brute-force detection (5 failures / 60 s) |
-|Network Monitor | New outbound destinatons and new listening ports | psutil connections snapshots; first-seen ( process,IP,port) triples; no DNS lookup .
+|Network Monitor | New outbound destinations and new listening ports | psutil connections snapshots; first-seen (process,IP,port) triples; noise-reduction for verified system processes; no DNS lookup.|
 
 **Analytics layer**
 - **Timeline Engine** — clusters events by time gap (10 s, measured from the most recent clustered event) and flags a cluster if it contains a medium/high severity event or involves 3+ distinct collectors.
@@ -93,7 +93,7 @@ To generate demo activity: open a few programs, create/edit/delete a file in `wa
 
 ## Testing
 
-34 automated tests cover config validation, storage and filtered queries (in-memory SQLite), file hashing and debouncing, USB diffing, brute-force detection (including a boundary test at the window edge), clustering and flagging, scoring, and ATT&CK mapping...scoring, ATT&CK mapping, report data, HTML escaping and the explainer’s citation checks.
+68 automated tests cover config validation, storage and filtered queries (in-memory SQLite), file hashing and debouncing, USB diffing, network noise-reduction, brute-force detection (including a boundary test at the window edge), clustering and flagging, scoring, ATT&CK mapping, report data, HTML escaping and the explainer’s citation checks.
 
 ## Results (live runs on the development machine)
 
