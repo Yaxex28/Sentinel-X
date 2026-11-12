@@ -41,7 +41,23 @@ def build_events(new_pids:set,snapshot:dict,host:str) -> list:
         events.append(event)
     return events
 
-def run_process_monitor(conn,host:str,ignore_list: list,poll_interval_seconds:int,max_iteration : int = None):    
+def build_stopped_events(terminated_pids: set, snapshot: dict, host: str) -> list:
+    """Build event objects for each terminated process PID."""
+    events = []
+    for pid in terminated_pids:
+        name = snapshot.get(pid, "unknown")
+        event = Event(
+            host = host,
+            source = "process_monitor",
+            event_type = "process_stopped",
+            severity = "low",
+            description = f"Process stopped: {name} (PID {pid})",
+            raw_data = {"pid": pid, "name": name}
+        )
+        events.append(event)
+    return events
+
+def run_process_monitor(conn,host:str,ignore_list: list,poll_interval_seconds:int,max_iteration : int = None):
     snap1 = take_snapshot()
     count = 0
 
@@ -51,13 +67,16 @@ def run_process_monitor(conn,host:str,ignore_list: list,poll_interval_seconds:in
         snap2 = take_snapshot()
 
         new_pids, terminated_pids = detect_changes(snap1, snap2)
-        filtered_pids = filter_ignored(new_pids, snap2, ignore_list)
-        events = build_events(filtered_pids, snap2, host)
+        filtered_new = filter_ignored(new_pids, snap2, ignore_list)
+        filtered_terminated = filter_ignored(terminated_pids, snap1, ignore_list)
 
-        for event in events:
+        new_events = build_events(filtered_new, snap2, host)
+        stopped_events = build_stopped_events(filtered_terminated, snap1, host)
+
+        for event in new_events + stopped_events:
             insert_event(conn,event)
             print(f"[+] {event.description}")
 
-        snap1 = snap2    
+        snap1 = snap2
         if max_iteration is not None and count >= max_iteration:
             break
