@@ -46,7 +46,7 @@ src/
   engine/      timeline_engine.py, threat_scoring.py, attack_mapping.py
   storage/     database.py, repository.py
 config/default.yaml
-tests/         49 pytest tests
+tests/         68 pytest tests
 run_all.py     starts all collectors concurrently
 report.py      generates the incident report
   reporting/   report_data.py, html_report.py
