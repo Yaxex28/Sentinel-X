@@ -3,8 +3,7 @@ from collectors.login_monitor import build_login_events, check_brute_force
 
 
 def setup_function():
-    # check_brute_force uses a module-level list; reset it before every test
-    login_monitor.failed_login_times.clear()
+    login_monitor.clear_failed_logins()
 
 
 def test_three_failures_become_three_login_failure_events():
@@ -27,7 +26,6 @@ def test_success_event_has_correct_fields():
 
 
 def test_events_are_processed_oldest_first_even_if_input_is_newest_first():
-    # newest-first input, as process_login_events actually returns it
     login_events = [(4625, 3), (4625, 2), (4625, 1)]
 
     events = build_login_events(login_events, "pc")
@@ -37,7 +35,6 @@ def test_events_are_processed_oldest_first_even_if_input_is_newest_first():
 
 
 def test_brute_force_alert_fires_at_threshold():
-    # 5 failures within 60 seconds -> alert on the 5th
     login_events = [(4625, t) for t in [0, 10, 20, 30, 40]]
 
     events = build_login_events(login_events, "pc")
@@ -48,7 +45,6 @@ def test_brute_force_alert_fires_at_threshold():
 
 
 def test_no_alert_when_failures_are_spread_out():
-    # 5 failures over 105 seconds -> should NOT trigger
     login_events = [(4625, t) for t in [0, 26, 52, 78, 105]]
 
     events = build_login_events(login_events, "pc")
@@ -58,11 +54,44 @@ def test_no_alert_when_failures_are_spread_out():
 
 
 def test_check_brute_force_boundary_exactly_at_window():
-    # oldest failure exactly window_seconds old should have fallen out
-    check_brute_force(0)
-    check_brute_force(15)
-    check_brute_force(30)
-    check_brute_force(45)
-    result = check_brute_force(60)  # cutoff = 0; time==0 is NOT < cutoff, so it stays
+    check_brute_force(0, source="test")
+    check_brute_force(15, source="test")
+    check_brute_force(30, source="test")
+    check_brute_force(45, source="test")
+    result = check_brute_force(60, source="test")
 
-    assert result is True  # all 5 still within window at the boundary
+    assert result is True
+
+
+def test_failures_from_different_sources_do_not_pool():
+    # 3 failures from source A, 3 failures from source B (total 6, but split across sources -> no alert)
+    login_events = [
+        (4625, 0, "admin", "192.168.1.10"),
+        (4625, 5, "admin", "192.168.1.10"),
+        (4625, 10, "admin", "192.168.1.10"),
+        (4625, 15, "admin", "192.168.1.20"),
+        (4625, 20, "admin", "192.168.1.20"),
+        (4625, 25, "admin", "192.168.1.20"),
+    ]
+
+    events = build_login_events(login_events, "pc")
+    alerts = [e for e in events if e.event_type == "brute_force_detected"]
+    assert len(alerts) == 0
+
+
+def test_failures_from_single_source_alerts_independently():
+    # 5 failures from source A, 3 failures from source B -> alert only for source A
+    login_events = [
+        (4625, 0, "admin", "192.168.1.10"),
+        (4625, 10, "admin", "192.168.1.10"),
+        (4625, 20, "admin", "192.168.1.10"),
+        (4625, 30, "admin", "192.168.1.10"),
+        (4625, 40, "admin", "192.168.1.10"),
+        (4625, 15, "admin", "192.168.1.20"),
+        (4625, 25, "admin", "192.168.1.20"),
+    ]
+
+    events = build_login_events(login_events, "pc")
+    alerts = [e for e in events if e.event_type == "brute_force_detected"]
+    assert len(alerts) == 1
+    assert alerts[0].raw_data["source"] == "192.168.1.10"
