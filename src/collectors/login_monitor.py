@@ -1,5 +1,6 @@
 import win32evtlog
 from core.models import Event
+from datetime import datetime
 import time
 from storage.repository import insert_event
 
@@ -102,6 +103,16 @@ def build_login_events(login_events: list, host: str) -> list:
         else:
             continue
 
+        if hasattr(timestamp, "isoformat"):
+            ts_str = timestamp.isoformat()
+        elif isinstance(timestamp, (int, float)):
+            try:
+                ts_str = datetime.fromtimestamp(timestamp).isoformat()
+            except (ValueError, OSError):
+                ts_str = str(timestamp)
+        else:
+            ts_str = str(timestamp)
+
         raw_data = {
             "event_id": event_id,
             "time": str(timestamp),
@@ -116,11 +127,18 @@ def build_login_events(login_events: list, host: str) -> list:
             severity=severity,
             description=f"{event_type} detected: account={account}, source={source}",
             raw_data=raw_data,
+            timestamp=ts_str,
         )
         events.append(event)
 
         if event_type == "login_failure":
-            time_value = timestamp.timestamp() if hasattr(timestamp, "timestamp") else timestamp
+            if hasattr(timestamp, "timestamp"):
+                time_value = timestamp.timestamp()
+            elif isinstance(timestamp, (int, float)):
+                time_value = float(timestamp)
+            else:
+                time_value = time.time()
+
             if check_brute_force(time_value, source=source):
                 alert = Event(
                     host=host,
@@ -129,6 +147,7 @@ def build_login_events(login_events: list, host: str) -> list:
                     severity="high",
                     description=f"Brute-force login attack detected on {host} from source {source}",
                     raw_data=raw_data,
+                    timestamp=ts_str,
                 )
                 events.append(alert)
 

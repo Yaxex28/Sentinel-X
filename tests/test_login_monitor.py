@@ -1,5 +1,6 @@
 import collectors.login_monitor as login_monitor
 from collectors.login_monitor import build_login_events, check_brute_force
+from datetime import datetime
 
 
 def setup_function():
@@ -95,3 +96,12 @@ def test_failures_from_single_source_alerts_independently():
     alerts = [e for e in events if e.event_type == "brute_force_detected"]
     assert len(alerts) == 1
     assert alerts[0].raw_data["source"] == "192.168.1.10"
+
+
+def test_login_event_uses_real_datetime_timestamp():
+    dt = datetime(2026, 6, 1, 12, 34, 56)
+    login_events = [(4624, dt, "user1", "local")]
+    events = build_login_events(login_events, "pc")
+    assert len(events) == 1
+    assert "2026-06-01T12:34:56" in events[0].timestamp
+
