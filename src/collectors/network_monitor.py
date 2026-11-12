@@ -1,4 +1,5 @@
 import ipaddress
+import os
 import time
 
 import psutil
@@ -27,21 +28,27 @@ def take_snapshot() -> list:
     return snapshot
 
 
-def make_name_lookup():
-    """Return a pid -> process name function with a cache that lives for one poll."""
+def make_info_lookup():
+    """Return a pid -> (name, exe) function with a cache that lives for one poll."""
     cache = {}
 
-    def name_for(pid):
+    def info_for(pid):
         if not pid:
-            return "unknown"
+            return "unknown", None
         if pid not in cache:
             try:
-                cache[pid] = psutil.Process(pid).name()
+                p = psutil.Process(pid)
+                # On Windows, we need the executable path for noise reduction
+                cache[pid] = (p.name(), p.exe())
             except (psutil.NoSuchProcess, psutil.AccessDenied):
-                cache[pid] = "unknown"
+                # Try to at least get the name if exe fails
+                try:
+                    cache[pid] = (psutil.Process(pid).name(), None)
+                except:
+                    cache[pid] = ("unknown", None)
         return cache[pid]
 
-    return name_for
+    return info_for
 
 
 def is_loopback(ip) -> bool:
@@ -51,7 +58,44 @@ def is_loopback(ip) -> bool:
         return False
 
 
-def find_new(snapshot, seen_destinations, seen_listeners, name_for, ignore_processes=()):
+def is_verified_system_process(name, exe_path):
+    """Return True if the process is a known Windows system process in its correct folder."""
+    if not exe_path:
+        return False
+
+    norm_path = os.path.normpath(exe_path)
+    folder = os.path.dirname(norm_path)
+
+    # Standard Windows system locations
+    sys32 = os.path.normpath(r"C:\Windows\System32")
+    syswow64 = os.path.normpath(r"C:\Windows\SysWOW64")
+    defender = os.path.normpath(r"C:\ProgramData\Microsoft\Windows Defender\Platform")
+
+    verified_rules = {
+        "svchost.exe": [sys32, syswow64],
+        "MpDefenderCoreService.exe": [defender],
+        "lsass.exe": [sys32],
+        "services.exe": [sys32],
+        "SearchIndexer.exe": [sys32],
+    }
+
+    if name not in verified_rules:
+        return False
+
+    allowed_folders = verified_rules[name]
+    for allowed in allowed_folders:
+        # MpDefender is in a versioned subfolder under the Platform directory
+        if name == "MpDefenderCoreService.exe":
+            if os.path.normcase(folder).startswith(os.path.normcase(allowed)):
+                return True
+        else:
+            if os.path.normcase(folder) == os.path.normcase(allowed):
+                return True
+    return False
+
+
+def find_new(snapshot, seen_destinations, seen_listeners, get_info,
+             ignore_processes=(), suspicious_ports=()):
     """Return (new_destinations, new_listeners) and record them in the seen sets.
 
     A destination is (process, remote_ip, remote_port): reported the first time
@@ -69,10 +113,20 @@ def find_new(snapshot, seen_destinations, seen_listeners, name_for, ignore_proce
         listening = c["status"] == "LISTEN" and c["local_port"] is not None
         if not (outbound or listening):
             continue
-        name = name_for(c["pid"])
+
+        name, exe_path = get_info(c["pid"])
+
         if name in ignore_processes:
             continue
+
         if outbound:
+            # Noise reduction: quiet verified system processes on non-suspicious ports
+            is_verified = is_verified_system_process(name, exe_path)
+            is_suspicious = c["remote_port"] in suspicious_ports
+
+            if is_verified and not is_suspicious:
+                continue
+
             key = (name, c["remote_ip"], c["remote_port"])
             if key not in seen_destinations:
                 seen_destinations.add(key)
@@ -116,14 +170,16 @@ def run_network_monitor(conn, host, poll_interval_seconds=5, suspicious_ports=()
     seen_destinations = set()
     seen_listeners = set()
     # Baseline: whatever is already connected when we start is not an event.
-    find_new(take_snapshot(), seen_destinations, seen_listeners, make_name_lookup(), ignore_processes)
+    find_new(take_snapshot(), seen_destinations, seen_listeners, make_info_lookup(),
+             ignore_processes, suspicious_ports)
 
     count = 0
     while True:
         count += 1
         time.sleep(poll_interval_seconds)
         new_destinations, new_listeners = find_new(
-            take_snapshot(), seen_destinations, seen_listeners, make_name_lookup(), ignore_processes
+            take_snapshot(), seen_destinations, seen_listeners, make_info_lookup(),
+            ignore_processes, suspicious_ports
         )
         for event in build_network_events(new_destinations, new_listeners, host, suspicious_ports):
             insert_event(conn, event)
