@@ -101,3 +101,17 @@ def test_mpdefender_quieted_in_platform_subfolder():
     info = lambda pid: ("MpDefenderCoreService.exe", path)
     destinations, _ = find_new(snapshot, set(), set(), info)
     assert destinations == []
+
+
+def test_beaconing_detection():
+    from collectors.network_monitor import NetworkMonitorStats
+    stats = NetworkMonitorStats()
+    key = ("malware.exe", "198.51.100.5", 443)
+
+    # Simulate connection every 10 seconds
+    t0 = 1000.0
+    stats.record_connection("malware.exe", "198.51.100.5", 443, t0)
+    stats.record_connection("malware.exe", "198.51.100.5", 443, t0 + 10.0)
+    stats.record_connection("malware.exe", "198.51.100.5", 443, t0 + 20.0)
+
+    assert stats.is_beaconing(key, threshold_seconds=10, count=3) is True
