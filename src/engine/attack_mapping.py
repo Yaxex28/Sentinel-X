@@ -56,6 +56,13 @@ ATTACK_MAP = {
         "confidence": "low",
         "rationale": "Creation of executable or script files in watched paths.",
     },
+    "process_masquerading": {
+        "technique_id": "T1036.005",
+        "technique": "Masquerading: Match Legitimate Name or Path",
+        "tactic": "Defense Evasion",
+        "confidence": "low",
+        "rationale": "Critical system binary name running from an unexpected non-system directory.",
+    },
 }
 
 def get_attack_tag(event_type: str):
