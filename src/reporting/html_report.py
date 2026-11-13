@@ -64,6 +64,10 @@ def _cluster_html(index: int, cluster: dict, explanation=None, label="Automated 
     flagged = cluster["flagged"]
     badge = '<span class="badge flagged">FLAGGED</span>' if flagged else ""
     sources = ", ".join(_e(s) for s in cluster["sources"])
+
+    rules = cluster.get("triggered_rules", [])
+    rules_str = " | Rules: " + ", ".join(_e(r) for r in rules) if rules else ""
+
     rows = []
     for ev in cluster["events"]:
         rows.append(
@@ -77,7 +81,7 @@ def _cluster_html(index: int, cluster: dict, explanation=None, label="Automated 
     return (
         "<details" + (' class="flagged" open' if flagged else "") + "><summary>"
         + "Cluster " + str(index) + ": " + _e(cluster["start"]) + " to " + _e(cluster["end"])
-        + " | " + str(cluster["event_count"]) + " events | " + sources + badge + "</summary>"
+        + " | " + str(cluster["event_count"]) + " events | " + sources + rules_str + badge + "</summary>"
         + note
         + "<table><tr><th>Time</th><th>Source</th><th>Event</th><th>Score</th></tr>"
         + "".join(rows) + "</table></details>"
@@ -134,6 +138,18 @@ def render_html(data: dict, explanations=None, explanation_label="Automated summ
         for t in data["techniques"]
     ) or '<tr><td colspan="4">None observed</td></tr>'
 
+    # Tactics by technique coverage view
+    tactics = {}
+    for t in data["techniques"]:
+        tactics.setdefault(t["tactic"], []).append(t)
+
+    coverage_view = "".join(
+        f"<h3>{_e(tactic)}</h3><ul>" +
+        "".join(f"<li>{_e(tech['technique_id'])} {_e(tech['technique'])} ({tech['count']} events)</li>" for tech in techs) +
+        "</ul>"
+        for tactic, techs in tactics.items()
+    ) or "<p>No techniques mapped.</p>"
+
     top_events = "".join(
         '<tr><td class="num">' + format(e["score"], ".1f") + "</td><td>" + _e(e["timestamp"])
         + "</td><td>" + _e(e["description"]) + _attack_tag(e["attack"]) + "</td></tr>"
@@ -163,6 +179,8 @@ def render_html(data: dict, explanations=None, explanation_label="Automated summ
         + alerts + "</table>"
         + "<h2>MITRE ATT&amp;CK techniques observed</h2><table><tr><th>ID</th><th>Technique</th><th>Tactic</th><th>Events</th></tr>"
         + techniques + "</table>"
+        + "<h2>ATT&amp;CK Tactics Coverage View</h2>"
+        + coverage_view
         + "<h2>Highest-scored events</h2><table><tr><th>Score</th><th>Time</th><th>Event</th></tr>"
         + top_events + "</table>"
         + _ioc_section(data["iocs"])

@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from src.engine.rule_engine import check_rules
 
 def event_gap_seconds(event_a, event_b) -> float:
     """Compute the time gap in seconds between two event rows."""
@@ -35,17 +35,19 @@ def cluster_events(events: list, gap_seconds: int = 10) -> list:
 
 
 def summarize_cluster(cluster: list) -> dict:
-    """Produce a quick summary of a cluster: time span, sources involved, event count."""
+    """Produce a quick summary of a cluster: time span, sources involved, event count, and triggered rules."""
     start_time = cluster[0][1]
     end_time = cluster[-1][1]
     sources = sorted(set(row[3] for row in cluster))
     severities = sorted(set(row[5] for row in cluster))
+    triggered_rules = check_rules(cluster)
     return {
         "start": start_time,
         "end": end_time,
         "event_count": len(cluster),
         "sources_involved": sources,
         "severities": severities,
+        "triggered_rules": triggered_rules,
     }
 
 def is_interesting(summary: dict, min_sources: int = 3) -> bool:

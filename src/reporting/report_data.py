@@ -48,6 +48,7 @@ def build_report_data(conn, gap_seconds: int = 10) -> dict:
             "event_count": summary["event_count"],
             "sources": summary["sources_involved"],
             "flagged": flagged,
+            "triggered_rules": summary.get("triggered_rules", []),
             "events": events,
         })
 

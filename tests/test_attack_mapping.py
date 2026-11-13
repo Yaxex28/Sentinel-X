@@ -13,6 +13,6 @@ def test_unmapped_event_type_returns_none():
 
 
 def test_all_mappings_have_required_fields():
-    required = {"technique_id", "technique", "tactic", "confidence"}
+    required = {"technique_id", "technique", "tactic", "confidence", "rationale"}
     for event_type, tag in ATTACK_MAP.items():
         assert required.issubset(tag.keys()), event_type
